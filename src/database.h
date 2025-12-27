@@ -13,4 +13,8 @@ typedef struct {
 	size_t record_count;
 } database_t;
 
+int load_database(database_t *db, const char *path);
+void free_database(database_t *db);
+database_record_t *get_record_for_user(database_t *db, const char *user);
+
 #endif

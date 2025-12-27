@@ -11,6 +11,7 @@ int load_database(database_t *db, const char *path){
 	memset(db,0,sizeof(database_t));
 	//====== open and read database ======
 	int dbfd = open(path,O_RDONLY);
+	if (dbfd < 0) return -errno;
 	//get filesize
 	struct stat stats;
 	if (fstat(dbfd,&stats) < 0){
@@ -35,13 +36,12 @@ int load_database(database_t *db, const char *path){
 	for (;;){
 		char *line_end = strchr(line_start,'\n');
 		*line_end = '\0';
-		size_t line_length = line_end - line_start;
 		//read the user and key
 		char *seperator = strchr(line_start,':');
 		if (seperator == NULL) goto next_line; //no seperator found (skip line)
-		char *user = malloc(seperator-line_start);
+		char *user = calloc(1,seperator-line_start+1);
 		memcpy(user,line_start,seperator-line_start);
-		char *key = malloc(line_end-seperator);
+		char *key = calloc(1,line_end-seperator+1);
 		memcpy(key,seperator+1,line_end-seperator-1);
 		//add it to the database
 		db->record_count++;
@@ -65,4 +65,15 @@ void free_database(database_t *db){
 		free(db->records[i].key);
 	}
 	free(db->records);
+}
+database_record_t *get_record_for_user(database_t *db, const char *user){
+	//iterate over records
+	for (size_t i = 0; i < db->record_count; i++){
+		//check for matching username
+		if (strcmp(db->records[i].user,user) == 0){
+			return db->records+i;
+		}
+	}
+	//not found
+	return NULL;
 }
