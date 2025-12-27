@@ -1,4 +1,5 @@
 #include "database.h"
+#include "totp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -23,6 +24,13 @@ int main(int argc, char **argv){
 	}
 	printf("user: %s\n",user_record->user);
 	printf("key: %s\n",user_record->key);
+	//====== calculate totp ======
+	unsigned char digest[21] = {0};
+	//sha1 has a digest length of 20
+	sha1(user_record->key,strlen(user_record->key),digest);
+	printf("key hash: ");
+	for (int i = 0; i < 20; i++) printf("%x",digest[i]);
+	printf("\n");
 	//====== free db ======
 	end:
 	free_database(&totp_key_db);
