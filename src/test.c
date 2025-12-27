@@ -29,7 +29,12 @@ int main(int argc, char **argv){
 	//sha1 has a digest length of 20
 	sha1(user_record->key,strlen(user_record->key),digest);
 	printf("key hash: ");
-	for (int i = 0; i < 20; i++) printf("%x",digest[i]);
+	for (int i = 0; i < 20; i++) printf("%02x",digest[i]);
+	printf("\n");
+	//calculate hmac
+	hmac_sha1(user_record->key,strlen(user_record->key),"hello",5,digest);
+	printf("key hmac: ");
+	for (int i = 0; i < 20; i++) printf("%02x",digest[i]);
 	printf("\n");
 	//====== free db ======
 	end:
