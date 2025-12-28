@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 
 int main(int argc, char **argv){
 	if (argc < 2){
@@ -25,7 +26,7 @@ int main(int argc, char **argv){
 	printf("user: %s\n",user_record->user);
 	printf("key: %s\n",user_record->key);
 	//====== calculate totp ======
-	unsigned char digest[21] = {0};
+	unsigned char digest[20] = {0};
 	//sha1 has a digest length of 20
 	sha1(user_record->key,strlen(user_record->key),digest);
 	printf("key hash: ");
@@ -36,6 +37,10 @@ int main(int argc, char **argv){
 	printf("key hmac: ");
 	for (int i = 0; i < 20; i++) printf("%02x",digest[i]);
 	printf("\n");
+	//calculate totp
+	int digits[6] = {0};
+	generate_totp(user_record->key,strlen(user_record->key),time(NULL),digits,6);
+	printf("totp: %d%d%d %d%d%d\n",digits[0],digits[1],digits[2],digits[3],digits[4],digits[5]);
 	//====== free db ======
 	end:
 	free_database(&totp_key_db);
