@@ -23,6 +23,7 @@ int main(int argc, char **argv){
 		fprintf(stderr,"Record not found.");
 		goto end;
 	}
+	//key is base32 encoded
 	char *decoded_key;
 	size_t decoded_key_len = base32decode(user_record->key,&decoded_key);
 	printf("user: %s\n",user_record->user);
@@ -38,8 +39,9 @@ int main(int argc, char **argv){
 	int digits[6] = {0};
 	generate_totp(decoded_key,decoded_key_len,time(NULL),digits,6);
 	printf("totp: %d%d%d %d%d%d\n",digits[0],digits[1],digits[2],digits[3],digits[4],digits[5]);
-	//====== free db ======
+	//====== cleanup ======
 	end:
 	free_database(&totp_key_db);
+	free(decoded_key);
 	return 0;
 }
