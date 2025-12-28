@@ -3,6 +3,7 @@
 #include <openssl/evp.h>
 #include <string.h>
 #include <endian.h>
+#include <ctype.h>
 
 int sha1(const char *message, size_t message_len, unsigned char *message_digest){
 	//====== initialise ======
@@ -98,3 +99,40 @@ int generate_totp(const char *key, size_t key_len, time_t time, int *digits, siz
 	}
 	return 0;
 }
+
+void write_bit_to_array(char *array, int bit, size_t index){
+	array[index/8] |= bit << (7-(index%8));
+}
+
+size_t base32decode(const char *input,char **output){
+	const char base32_table[] = {'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','2','3','4','5','6','7','\0'};
+	size_t bit_count = 0;
+	size_t output_size = 0;
+	*output = malloc(1);
+	//for each group of 8 bytes
+	for (size_t i = 0; i < strlen(input); i+=8){
+		char output_byte_group[5] = {0};
+		char input_byte_group[8] = {0};
+		memcpy(input_byte_group,input+i,8);
+		for (int j = 0; j < 8; j++){
+			char input_byte = tolower(input_byte_group[j]);
+			//padding
+			if (input_byte == '=') continue;
+			//find corresponding index in table
+			char *position = strchr(base32_table,input_byte);
+			if (position == NULL) continue;
+			uint8_t index = position-base32_table;
+			for (size_t bit_index = 0; bit_index < 5; bit_index++){
+				write_bit_to_array(output_byte_group,(index >> (4-bit_index)) & 1,bit_index+(5*j));
+			}
+			bit_count += 5;
+		}
+		output_size += 5;
+		*output = realloc(*output,output_size);
+		memcpy(*output+output_size-5,output_byte_group,5);
+	}
+	//ceil division
+	output_size = (bit_count/8) + (bit_count % 8 != 0);
+	return output_size;
+}
+
