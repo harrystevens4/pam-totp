@@ -23,8 +23,10 @@ int main(int argc, char **argv){
 		fprintf(stderr,"Record not found.");
 		goto end;
 	}
+	char *decoded_key;
+	size_t decoded_key_len = base32decode(user_record->key,&decoded_key);
 	printf("user: %s\n",user_record->user);
-	printf("key: %s\n",user_record->key);
+	printf("key: %.*s\n",(int)decoded_key_len,decoded_key);
 	//====== calculate totp ======
 	unsigned char digest[20] = {0};
 	//sha1 has a digest length of 20
@@ -32,14 +34,9 @@ int main(int argc, char **argv){
 	printf("key hash: ");
 	for (int i = 0; i < 20; i++) printf("%02x",digest[i]);
 	printf("\n");
-	//calculate hmac
-	hmac_sha1(user_record->key,strlen(user_record->key),"hello",5,digest);
-	printf("key hmac: ");
-	for (int i = 0; i < 20; i++) printf("%02x",digest[i]);
-	printf("\n");
 	//calculate totp
 	int digits[6] = {0};
-	generate_totp(user_record->key,strlen(user_record->key),time(NULL),digits,6);
+	generate_totp(decoded_key,decoded_key_len,time(NULL),digits,6);
 	printf("totp: %d%d%d %d%d%d\n",digits[0],digits[1],digits[2],digits[3],digits[4],digits[5]);
 	//====== free db ======
 	end:
