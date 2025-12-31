@@ -1,0 +1,2 @@
+#!/bin/sh
+cp pam_totp.so /usr/lib/x86_64-linux-gnu/security/
