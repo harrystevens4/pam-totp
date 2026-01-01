@@ -19,5 +19,7 @@ where the secretkey is a base32 string.
 
 # Install
 
+requires `libcrypto` which may be packaged with openssl
+
 Compile with `make pam_totp.so`
 Install with `./install`
