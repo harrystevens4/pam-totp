@@ -24,6 +24,7 @@ int sha1(const char *message, size_t message_len, unsigned char *message_digest)
 }
 
 int hmac_sha1(const char *key, size_t key_len, const char *message, size_t message_len, unsigned char *digest){
+	//====== constants ======
 	const unsigned int block_size = 64;
 	const unsigned int hash_size = 20;
 	unsigned char block[block_size];
@@ -33,9 +34,12 @@ int hmac_sha1(const char *key, size_t key_len, const char *message, size_t messa
 	//magic numbers
 	memset(inner_padding,0x36,block_size);
 	memset(outer_padding,0x5c,block_size);
+	//====== user just wants the size to allocate ======
+	if (digest == NULL) return hash_size;
 	//====== generate block sized key ======
 	if (key_len > block_size){
-		sha1(key,key_len,block);
+		int result = sha1(key,key_len,block);
+		if (result < 0) return result;
 	}else {
 		memcpy(block,key,key_len);
 	}
@@ -50,8 +54,9 @@ int hmac_sha1(const char *key, size_t key_len, const char *message, size_t messa
 	//hash result
 	unsigned char inner_digest[hash_size];
 	memset(inner_digest,0,hash_size);
-	sha1((char *)key_plus_message,key_plus_message_len,inner_digest);
+	int result = sha1((char *)key_plus_message,key_plus_message_len,inner_digest);
 	free(key_plus_message);
+	if (result < 0) return result;
 	//xor outer_padding with block sized key
 	for (unsigned int i = 0; i < block_size; i++) outer_padding[i] ^= block[i];
 	//contatenate with previous hash
@@ -59,31 +64,24 @@ int hmac_sha1(const char *key, size_t key_len, const char *message, size_t messa
 	memcpy(outer_padding_plus_inner_hash,outer_padding,block_size);
 	memcpy(outer_padding_plus_inner_hash+block_size,inner_digest,hash_size);
 	//hash concatenated total
-	sha1(outer_padding_plus_inner_hash,hash_size+block_size,digest);
-	return 0;
+	result = sha1(outer_padding_plus_inner_hash,hash_size+block_size,digest);
+	if (result < 0) return result;
+	return hash_size+block_size;
 }
 
 int generate_totp(const char *key, size_t key_len, time_t time, int *digits, size_t digit_count){
 	const int DIGITS_POWER[] = {1,10,100,1000,10000,100000,1000000,10000000,100000000};
 	const time_t timestep = 30;
+	//====== generate hmac message ======
 	uint64_t timesteps = htobe64(time / timestep);
-	//generate hmac message
 	char hmac_message[8] = {0};
 	size_t hmac_message_len = 8;
 	memcpy(hmac_message,&timesteps,8);
-	//char hmac_message[1024] = {'0'};
-	//char time_as_string[1024];
-	//size_t hmac_message_len = snprintf(time_as_string,sizeof(time_as_string),"%lu",timesteps);
-	//if (hmac_message_len < 16){
-	//	memcpy(hmac_message+(16-hmac_message_len),time_as_string,hmac_message_len);
-	//	hmac_message_len = 16;
-	//}else{
-	//	memcpy(hmac_message,time_as_string,hmac_message_len);
-	//}
-	//calculate the hmac
-	unsigned char digest[20];	
-	hmac_sha1(key,key_len,hmac_message,hmac_message_len,digest);
-	//extract the otp
+	//====== calculate the hmac ======
+	unsigned char digest[20];
+	int result = hmac_sha1(key,key_len,hmac_message,hmac_message_len,digest);
+	if (result < 0) return result;
+	//====== extract the otp ======
 	int offset = digest[20-1] & 0xf;
 	int binary = 
 		((digest[offset] & 0x7f) << 24) |

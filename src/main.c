@@ -52,13 +52,17 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc, co
 	sha1(user_record->key,strlen(user_record->key),digest);
 	//calculate totp
 	int calculated_digits[6] = {0};
-	generate_totp(decoded_key,decoded_key_len,time(NULL),calculated_digits,6);
+	int result = generate_totp(decoded_key,decoded_key_len,time(NULL),calculated_digits,6);
 	//====== cleanup ======
 	free_database(&totp_key_db);
 	free(decoded_key);
 	free(response->resp);
 	free(response);
 	//====== verify totp ======
+	//check generate_totp() was successfull
+	if (result < 0){
+		return PAM_SYSTEM_ERR;
+	}
 	for (int i = 0; i < 6; i++){
 		//does each digit given match the calculated digit?
 		if (calculated_digits[i] != totp_digits[i]) return PAM_AUTH_ERR;
