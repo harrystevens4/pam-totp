@@ -1,16 +1,25 @@
 #include "database.h"
 #include "totp.h"
+#include "util.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <ctype.h>
 
 int main(int argc, char **argv){
 	if (argc < 2){
 		fprintf(stderr,"Please provide the name of a user.\n");
 		return 1;
 	}
+	//====== check utility functions ======
+	char *test_string = strdup(" abcd   e fg    27?? 89 ");
+	str_remove_predicate(test_string,isspace);
+	str_remove_predicate(test_string,isalpha);
+	str_remove_predicate(test_string,ispunct);
+	printf("[%s]\n",test_string);
+	free(test_string);
 	//====== load db ======
 	database_t totp_key_db;
 	if (load_database(&totp_key_db,"totp_keys") < 0){

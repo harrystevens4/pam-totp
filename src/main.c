@@ -1,8 +1,11 @@
 #include <security/pam_modules.h>
 #include <security/pam_misc.h>
 #include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
 #include "database.h"
 #include "totp.h"
+#include "util.h"
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc, const char **argv){
 	//====== get user ======
@@ -38,14 +41,24 @@ PAM_EXTERN int pam_sm_authenticate(pam_handle_t *handle, int flags, int argc, co
 	const struct pam_message *message_ptr = &message;
 	pam_result = (*conv->conv)(1,&message_ptr,&response,conv->appdata_ptr);
 	if (pam_result != PAM_SUCCESS) return pam_result;
+	//====== cleanup input ======
+	char *totp_string = strdup(response->resp);
+	//remove spaces as they are often shown like "123 456" in auth apps
+	str_remove_predicate(totp_string,isspace);
+	//remove letters
+	str_remove_predicate(totp_string,isalpha);
+	//remove punctuation
+	str_remove_predicate(totp_string,ispunct);
+	//extract digits
 	int totp_digits[6] = {0};
-	for (size_t i = 0; (i < 6) && (i < strlen(response->resp)); i++){
+	for (size_t i = 0; (i < 6) && (i < strlen(totp_string)); i++){
 		//copy the digits from the response into an array
-		if (isdigit(response->resp[i])){
+		if (isdigit(totp_string[i])){
 			//convert from char to int
-			totp_digits[i] = response->resp[i] - '0';
+			totp_digits[i] = totp_string[i] - '0';
 		}
 	}
+	free(totp_string);
 	//====== calculate totp ======
 	unsigned char digest[20] = {0};
 	//sha1 has a digest length of 20
