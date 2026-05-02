@@ -1,6 +1,7 @@
 #include "database.h"
 #include "totp.h"
 #include "util.h"
+#include "crypto.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -12,6 +13,17 @@ int main(int argc, char **argv){
 	if (argc < 2){
 		fprintf(stderr,"Please provide the name of a user.\n");
 		return 1;
+	}
+	//====== check hash functions ======
+	unsigned char sha1_digest[20] = {0};
+	int result = sha1(argv[1],strlen(argv[1]),sha1_digest);
+	if (result != 0){
+		fprintf(stderr,"sha1() failed\n");
+		perror("sha1");
+	}else{
+		printf("hashed username: \n");
+		for (int i = 0; i < 20; i++) printf("%02x",sha1_digest[i]);
+		printf("\n");
 	}
 	//====== check utility functions ======
 	char *test_string = strdup(" abcd   e fg    27?? 89 ");
